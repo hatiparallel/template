@@ -13,6 +13,18 @@ class Metric(object):
     def calculate(self, count):
         return self.value = self.calculator(self.value, count)
 
+
+class LossMetric(object):
+    def __init__(self, ini):
+        self.value = ini
+    def update(self, loss):
+        self.value += loss
+    def calculate(self, count):
+        self.value = self.value / count
+        return self.value    
+
+
+
 # use once for every epoch
 # have metrics
 # write metrics for yourself
@@ -31,16 +43,22 @@ class Result(object):
             return value / count
         self.mae = Metric(0, mae_updater, mae_calculator)
 
-    def update(self, targets, preds):
+        self.loss = LossMetric(0)
+
+    def update(self, targets, preds, loss):
+        self.loss.update(loss)
+
         for target, pred in zip(targets, preds):
             for key, value in self.__dict__.items():
                 if value.__class__.__name__ == "Metric":
                     getattr(self, key).update(target, pred)
-            count += 1
+            self.count += 1
 
     def calculate(self):
+        self.loss.calculate(self.count)
+
         for key, value in self.__dict__.items():
-            if value.__class__.__name__ == "Metric":
+            if value.__class__.__name__ == "Metric" or value.__class__.__name__ == "LossMetric":
                 getattr(self, key).calculate(self, self.count)
 
 # use once for one training
@@ -50,11 +68,11 @@ class Logger(object):
         self.dir = dir
         self.epochs = [start_epoch]
         for key, value in result.__dict__.items():
-            if value.__class__.__name__ == "Metric":
+            if value.__class__.__name__ == "Metric" or value.__class__.__name__ == "LossMetric":
                 log = getattr(result, key).value
                 setattr(self, key, [log])
 
-    def append(result, file):
+    def append(self, result, file):
         log_dict = {}
 
         for key, value in result.__dict__.items():
@@ -68,9 +86,14 @@ class Logger(object):
             writer = csv.DictWriter(csvfile, fieldnames=fieldnames)
             writer.writerow(log_dict)
 
-    def write_into_csv(name):
-        with open(test_csv, 'a') as csvfile:
-            writer = csv.DictWriter(csvfile, fieldnames=fieldnames)
-            writer.writerow({'mse': avg.mse, 'rmse': avg.rmse, 'absrel': avg.absrel, 'lg10': avg.lg10,
-                                'mae': avg.mae, 'delta1': avg.delta1, 'delta2': avg.delta2, 'delta3': avg.delta3,
-                                'data_time': avg.data_time, 'gpu_time': avg.gpu_time})
+    def write_into_file(self, name):
+        df = pd.read_csv(self.file)
+        values = df.values.T
+        columns = df.columns
+        epochs = np.array([i for i in range(len(values[0]))])
+
+        for i, c in enumerate(columns):
+            filename = os.path.join(self.place, "{}_{}.jpg".format(name, c))
+            plt.figure()
+            plt.plot(epochs, values[i])
+            plt.savefig(filename)
