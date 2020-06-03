@@ -33,7 +33,8 @@ def train(train_loader, model, criterion, optimizer, epoch, datadir):
         # measure accuracy and record loss
         target = target.cpu().detach().numpy()
         pred = pred.cpu().detach().numpy()
-        result.update(target, pred)
+        loss = loss.cpu().detach().item()
+        result.update(target, pred, loss)
         end = time.time()
 
     result.calculate()

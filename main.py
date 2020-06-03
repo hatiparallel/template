@@ -161,7 +161,7 @@ def main():
 
         optimizer_scheduler.step()
         # evaluate on validation set
-        test_result = test.validate(test_loader, model, epoch, datadir)
+        test_result = test.validate(test_loader, model, criterion, optimizer)
 
         if epoch == 0:
             test_logger = logger.Logger(output_directory, 0, test_result)

@@ -19,7 +19,7 @@ import criteria
 import misc
 import logger
 
-def validate(val_loader, model, epoch, datadir, write_to_file=True):
+def validate(val_loader, model, criterion, optimizer, write_to_file=True):
     result = logger.Result()
 
     # switch to evaluate mode
@@ -35,13 +35,15 @@ def validate(val_loader, model, epoch, datadir, write_to_file=True):
         end = time.time()
         with torch.no_grad():
             pred = model(input)
+            loss = criterion(pred, target)
 
         gpu_time = time.time() - end
 
         # measure accuracy and record loss
         target = target.cpu().detach().numpy()
         pred = pred.cpu().detach().numpy()
-        result.update(target, pred)
+        loss = loss.cpu().detach().item()
+        result.update(target, pred, cpu)
         end = time.time()
 
     result.calculate()
