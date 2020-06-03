@@ -1,11 +1,12 @@
 import numpy as np
 import torch
+import os
 
 
 def get_output_directory(args):
     output_directory = os.path.join('results',
                                     '{}.arch={}.criterion={}.lr={}.momentum={}.weightdecay={}.bs={}'.
-                                    format(args.data, args.arch, args.criterion, args.lr, args.momentum, args.weight_decay, args.batch_size, args))
+                                    format(args.data, args.arch, args.criterion, args.lr, args.momentum, args.weight_decay, args.batch_size))
 
     if not os.path.exists(output_directory):
         os.makedirs(output_directory)

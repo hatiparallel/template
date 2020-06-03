@@ -1,11 +1,15 @@
 import numpy as np
 import torch
+import torchvision
 import argparse
+import os
+import torch.optim.lr_scheduler as lr_scheduler
 
 import misc
 import train
 import test
 import logger
+import loader
 
 model_names = ['vgg16', 'vgg19', 'vgg16bn', 'vgg19bn', 'resnet50', 'resnet101']
 loss_names = ['l1', 'l2']
@@ -140,20 +144,11 @@ def main():
 
     optimizer_scheduler = lr_scheduler.StepLR(optimizer, args.epochs//3)
 
-    # create new csv files with only header
-    with open(train_csv, 'w') as csvfile:
-        writer = csv.DictWriter(csvfile, fieldnames=fieldnames)
-        writer.writeheader()
-    with open(test_csv, 'w') as csvfile:
-        writer = csv.DictWriter(csvfile, fieldnames=fieldnames)
-        writer.writeheader()
-
-    # model = torch.nn.DataParallel(model).cuda()
     model = model.cuda()
     print(model)
     print("=> model transferred to GPU.")
 
-    train_logger, test_logger
+    train_logger, test_logger = None, None
 
     for epoch in range(args.start_epoch, args.epochs):
         train_result = train.train(train_loader, model, criterion,
@@ -181,3 +176,6 @@ def main():
             'best_result': best_result,
             'optimizer': optimizer,
         }, is_best, epoch, output_directory)
+
+if __name__ == "__main__":
+    main()

@@ -39,7 +39,7 @@ def make_dataset(dir):
 
 
 def transform_image(img, random):
-    resize = transforms.Resize(64)
+    resize = transforms.Resize((64, 64))
     crop = transforms.RandomCrop(64, padding=4)
     flip = transforms.RandomHorizontalFlip()
     totensor = transforms.ToTensor()

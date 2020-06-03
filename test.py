@@ -19,9 +19,6 @@ import criteria
 import misc
 import logger
 
-best_result = Result()
-best_result.set_to_worst()
-
 def validate(val_loader, model, epoch, datadir, write_to_file=True):
     result = logger.Result()
 
@@ -42,8 +39,8 @@ def validate(val_loader, model, epoch, datadir, write_to_file=True):
         gpu_time = time.time() - end
 
         # measure accuracy and record loss
-        target = target.cpu().numpy()
-        pred = pred.cpu().numpy()
+        target = target.cpu().detach().numpy()
+        pred = pred.cpu().detach().numpy()
         result.update(target, pred)
         end = time.time()
 

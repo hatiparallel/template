@@ -1,10 +1,11 @@
 import numpy as np
 import torch
+import time
+
 import logger
 
 def train(train_loader, model, criterion, optimizer, epoch, datadir):
-    average_meter = AverageMeter()
-
+    
     # switch to train mode
     model.train()
 
@@ -20,7 +21,6 @@ def train(train_loader, model, criterion, optimizer, epoch, datadir):
         end = time.time()
         pred = model(input)
         loss = criterion(pred, target)
-        train_loss_f.write("{0}\n".format(loss.data))
 
         optimizer.zero_grad()
         
@@ -31,8 +31,8 @@ def train(train_loader, model, criterion, optimizer, epoch, datadir):
         gpu_time = time.time() - end
 
         # measure accuracy and record loss
-        target = target.cpu().numpy()
-        pred = pred.cpu().numpy()
+        target = target.cpu().detach().numpy()
+        pred = pred.cpu().detach().numpy()
         result.update(target, pred)
         end = time.time()
 

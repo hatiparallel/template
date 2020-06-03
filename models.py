@@ -1,5 +1,6 @@
 import numpy as np
 import torch
+import torch.nn as nn
 import torchvision.models
 
 
@@ -19,13 +20,13 @@ class VGGUncertainty(nn.Module):
         return y, u
 
 def call_partial_vgg(clip_features, kind):
-    model = torchvision.models.vgg16(pretrained=True)
+    model = torchvision.models.vgg16()
     if kind == '19':
-        model = torchvision.models.vgg19(pretrained=True)
+        model = torchvision.models.vgg19()
     elif kind == 'bn16':
-        model = torchvision.models.vgg16_bn(pretrained=True)
+        model = torchvision.models.vgg16_bn()
     elif kind == 'bn19':
-        model = torchvision.models.vgg19_bn(pretrained=True)
+        model = torchvision.models.vgg19_bn()
     model.classifier = nn.Sequential(
         nn.Linear(512*7*7, 4096),
         nn.ReLU(True),
