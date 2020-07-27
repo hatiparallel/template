@@ -10,9 +10,10 @@ import train
 import test
 import logger
 import loader
+import models
 
 model_names = ['vgg16', 'vgg19', 'vgg16bn', 'vgg19bn', 'resnet50', 'resnet101']
-loss_names = ['l1', 'l2']
+loss_names = ['cce']
 
 data_names = ['MNIST']
 
@@ -37,11 +38,11 @@ parser.add_argument('--start-epoch', default=0, type=int, metavar='N',
                     help='manual epoch number (useful on restarts)')
 parser.add_argument('-b', '--batch-size', default=64, type=int,
                     help='mini-batch size (default: 64)')
-parser.add_argument('-c', '--criterion', metavar='LOSS', default='l1',
+parser.add_argument('-c', '--criterion', metavar='LOSS', default='cce',
                     choices=loss_names,
                     help='loss function: ' +
                     ' | '.join(loss_names) +
-                    ' (default: l1)')
+                    ' (default: cce)')
 
 # arguments for the optimizer
 parser.add_argument('--optimizer', dest='optimizer', default='SGD', type=str,
@@ -80,7 +81,8 @@ def main():
     
     print("=> creating data loaders ...")
     if args.data == 'MNIST':
-        all_dataset = MNIST(datadir)
+        datadir = './data/'
+        all_dataset = loader.MNIST(datadir)
         train_size = len(all_dataset) // 5 * 4
         test_size = len(all_dataset) // 10
         val_size = len(all_dataset) - (train_size + test_size)
@@ -115,8 +117,8 @@ def main():
         # define model
         print("=> creating Model ({}) ...".format(args.arch))
 
-        if args.arch == 'vgg16':
-            model = vgg16()
+        if args.arch == 'resnet50':
+            model = models.ResNet(50)
         else:
             raise RuntimeError("model not found")
 
@@ -124,16 +126,12 @@ def main():
 
         
     # define loss function (criterion) and optimizer
-    if args.criterion == 'l2':
-        criterion = criteria.MaskedMSELoss().cuda()
-    elif args.criterion == 'l1':
-        criterion = criteria.MaskedL1Loss().cuda()
+    if args.criterion == 'cce':
+        criterion = criteria.CrossEntropyLoss().cuda()
+    else:
+        raise RuntimeError("criterion not found")
 
-
-    if args.optimizer == 'RMSProp':
-        optimizer = torch.optim.RMSprop(
-            model.parameters(), lr=args.lr, weight_decay=1e-04)
-    elif args.optimizer == 'Adam':
+    if args.optimizer == 'Adam':
         optimizer = torch.optim.Adam(model.parameters(), lr = args.lr, weight_decay = args.weight_decay)
     elif  args.optimizer == 'SGD':
         optimizer = torch.optim.SGD(model.parameters(), args.lr,
@@ -151,20 +149,20 @@ def main():
     train_logger, test_logger = None, None
 
     for epoch in range(args.start_epoch, args.epochs):
-        train_result = train.train(train_loader, model, criterion,
-                optimizer, epoch, datadir, args.train_scheduling)
+        train_result = train.train(train_loader, model, criterion, optimizer)
 
         if epoch == 0:
-            train_logger = logger.Logger(output_directory, 0, train_result)
+            train_logger = logger.Logger(train_result, output_directory, train_csv)
         else:
             train_logger.append(train_result)
 
         optimizer_scheduler.step()
+
         # evaluate on validation set
         test_result = test.validate(test_loader, model, criterion, optimizer)
 
         if epoch == 0:
-            test_logger = logger.Logger(output_directory, 0, test_result)
+            test_logger = logger.Logger(test_result, output_directory, test_csv)
         else:
             test_logger.append(test_result)
 
@@ -176,6 +174,9 @@ def main():
             'best_result': best_result,
             'optimizer': optimizer,
         }, is_best, epoch, output_directory)
+
+    train_logger.write_into_file('train')
+    test_logger.write_into_file('test')
 
 if __name__ == "__main__":
     main()

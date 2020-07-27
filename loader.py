@@ -63,7 +63,7 @@ class MNIST(data.Dataset):
         self.imgs = imgs
         self.random = random
 
-    def __getitem__(self, idx):
+    def __getitem__(self, idx : int):
         """
         Args:
             index (int): Index
@@ -74,7 +74,7 @@ class MNIST(data.Dataset):
         path, target = self.imgs[idx]
         target = torch.tensor([target], requires_grad = False)
         input_tensor = transform_image(Image.open(path).convert("RGB"), random = self.random)
-        return input_tensor, target, idx, r_fix
+        return input_tensor, target
 
     def __len__(self):
         return len(self.imgs)

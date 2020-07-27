@@ -2,50 +2,9 @@ import numpy as np
 import torch
 import torch.nn as nn
 import torchvision.models
-
-
-
-class VGGUncertainty(nn.Module):
-    def __init__(self, clip_features, kind = '16'):
-        super(VGGUncertainty, self).__init__()
-        self.vgg = call_partial_vgg(clip_features, kind)
-        self.output = nn.Linear(4096, 1)
-        self.uncertainty = nn.Linear(4096, 1)
-
-    def forward(self, x):
-        x = self.vgg(x)
-        y = self.output(x)
-        u = self.uncertainty(x)
-
-        return y, u
-
-def call_partial_vgg(clip_features, kind):
-    model = torchvision.models.vgg16()
-    if kind == '19':
-        model = torchvision.models.vgg19()
-    elif kind == 'bn16':
-        model = torchvision.models.vgg16_bn()
-    elif kind == 'bn19':
-        model = torchvision.models.vgg19_bn()
-    model.classifier = nn.Sequential(
-        nn.Linear(512*7*7, 4096),
-        nn.ReLU(True),
-        nn.Dropout(),
-        nn.Linear(4096, 4096),
-        nn.ReLU(True),
-        nn.Dropout(),
-    )
-
-    if clip_features:
-        for p in model.features.parameters():
-            p.requires_grad = False
-            
-    return model
-
-
-
+# a simple example with resnet which outputs 10 values
 class ResNet(nn.Module):
-    def __init__(self, layers):
+    def __init__(self, layers : int):
 
         if layers not in [18, 34, 50, 101, 152]:
             raise RuntimeError(
@@ -64,9 +23,11 @@ class ResNet(nn.Module):
         self.layer2 = pretrained_model._modules['layer2']
         self.layer3 = pretrained_model._modules['layer3']
         self.layer4 = pretrained_model._modules['layer4']
+
         self.avgpool = nn.AdaptiveAvgPool2d((1, 1))
-        # pretrained_model._modules['avgpool']
-        self.output = nn.Linear(512 * 4, 1)
+        # or : pretrained_model._modules['avgpool']
+
+        self.output = nn.Linear(512 * 4, 10)
 
         # clear memory
         del pretrained_model
